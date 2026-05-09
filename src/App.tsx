@@ -14,6 +14,14 @@ function App() {
   const [isSyncing, setIsSyncing] = useState(true);
   const familyId = 'shared-family';
 
+  // Clear URL parameters to stay at root link
+  useEffect(() => {
+    if (window.location.search) {
+      const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+  }, []);
+
   // Sync with Firestore
   useEffect(() => {
     const docRef = doc(db, 'families', familyId);
