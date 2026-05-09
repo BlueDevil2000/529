@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, User, Trash2, Share2, Cloud, CloudOff } from 'lucide-react';
+import { Calculator, Plus, User, Trash2, Cloud, CloudOff } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import CalculatorForm from './CalculatorForm';
@@ -168,14 +168,6 @@ function App() {
           <p>
             Projections are based on monthly compounding. College costs are estimated as (Tuition + Room & Board) × 4 years.
             Data provided by the US Dept. of Education College Scorecard.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default App;ded by the US Dept. of Education College Scorecard.
           </p>
         </div>
       </div>
