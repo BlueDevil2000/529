@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ChildProfile, CollegeData } from './types';
 import CollegeSearch from './CollegeSearch';
 import { School, X, TrendingUp, Info } from 'lucide-react';
@@ -10,6 +11,8 @@ interface CalculatorFormProps {
 }
 
 const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) => {
+  const [isManual, setIsManual] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     onChange({
@@ -18,11 +21,27 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
     });
   };
 
+  const handleManualCollegeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const currentCollege = profile.targetCollege || { id: 0, name: '', tuitionInState: 0, tuitionOutState: 0, roomAndBoard: 0, costOfAttendance: 0 };
+    
+    onChange({
+      ...profile,
+      targetCollege: {
+        ...currentCollege,
+        [name]: name === 'name' ? value : parseFloat(value) || 0,
+        // When entering manually, we set costOfAttendance as the primary driver
+        costOfAttendance: name === 'costOfAttendance' ? parseFloat(value) || 0 : currentCollege.costOfAttendance
+      }
+    });
+  };
+
   const handleCollegeSelect = (college: CollegeData) => {
     onChange({
       ...profile,
       targetCollege: college,
     });
+    setIsManual(false);
   };
 
   const clearCollege = () => {
@@ -30,6 +49,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
       ...profile,
       targetCollege: undefined,
     });
+    setIsManual(false);
   };
 
   const yearsToCollege = Math.max(0, Math.ceil(differenceInMonths(parseISO(profile.collegeStartDate), new Date()) / 12));
@@ -133,12 +153,46 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
         </div>
 
         <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-            <School className="h-5 w-5 mr-2 text-blue-600" />
-            Target College
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+              <School className="h-5 w-5 mr-2 text-blue-600" />
+              Target College
+            </h2>
+            <button 
+              onClick={() => setIsManual(!isManual)}
+              className="text-[10px] uppercase font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+            >
+              {isManual ? 'Switch to Search' : 'Enter Manually'}
+            </button>
+          </div>
           
-          {profile.targetCollege ? (
+          {isManual ? (
+            <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">College Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="e.g. Duke University"
+                  value={profile.targetCollege?.name || ''}
+                  onChange={handleManualCollegeChange}
+                  className="w-full p-2 text-sm border border-gray-200 rounded focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Annual Cost (Today)</label>
+                <input
+                  type="number"
+                  name="costOfAttendance"
+                  placeholder="e.g. 85000"
+                  value={profile.targetCollege?.costOfAttendance || ''}
+                  onChange={handleManualCollegeChange}
+                  className="w-full p-2 text-sm border border-gray-200 rounded focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+              <p className="text-[10px] text-gray-400 italic mt-1">Manual mode: Inflation will still be applied to these values.</p>
+            </div>
+          ) : profile.targetCollege ? (
             <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm relative">
               <button 
                 onClick={clearCollege}
@@ -182,7 +236,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
             </div>
           )}
 
-          <CollegeSearch onSelect={handleCollegeSelect} />
+          {!isManual && <CollegeSearch onSelect={handleCollegeSelect} />}
         </div>
       </div>
     </div>
