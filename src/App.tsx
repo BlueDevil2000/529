@@ -31,9 +31,8 @@ function App() {
         if (data.profiles) setProfiles(data.profiles);
         if (data.activeId) setActiveId(data.activeId);
       } else {
-        // RECOVERY CHECK: If cloud is empty, check if user has old local data
-        const saved = localStorage.getItem('529_profiles');
-        let initialProfiles = [
+        // Initialize shared family in cloud ONLY if it has never existed
+        const initialProfiles = [
           {
             id: '1',
             name: 'Kid 1',
@@ -43,18 +42,7 @@ function App() {
             collegeStartDate: '2035-09',
           }
         ];
-        
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              initialProfiles = parsed;
-              console.log("Recovered data from local storage");
-            }
-          } catch (e) { console.error(e); }
-        }
-        
-        setDoc(docRef, { profiles: initialProfiles, activeId: initialProfiles[0].id });
+        setDoc(docRef, { profiles: initialProfiles, activeId: '1' });
       }
       setIsSyncing(false);
     }, (error) => {
