@@ -169,7 +169,7 @@ function App() {
         
         <SummaryStats result={calculationResult} targetCost={targetCost} />
         
-        <GrowthChart data={calculationResult.yearlyData} targetCost={targetCost} />
+        <GrowthChart data={calculationResult.yearlyData} />
         
         <div className="mt-8 text-sm text-gray-500 text-center bg-white p-4 rounded-lg shadow-inner">
           <p className="font-semibold text-gray-700 mb-1">How it works</p>

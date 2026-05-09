@@ -31,7 +31,7 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${BASE_URL}?api_key=${API_KEY}&school.name=${query}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus&per_page=5`
+        `${BASE_URL}?api_key=${API_KEY}&school.name=${query}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year&per_page=5`
       );
       const data = await response.json();
       setResults(data.results || []);
@@ -50,6 +50,7 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
       tuitionInState: school['latest.cost.tuition.in_state'],
       tuitionOutState: school['latest.cost.tuition.out_of_state'],
       roomAndBoard: school['latest.cost.roomboard.oncampus'],
+      costOfAttendance: school['latest.cost.attendance.academic_year'],
     });
     setQuery('');
     setShowDropdown(false);

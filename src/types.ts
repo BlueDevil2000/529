@@ -4,6 +4,7 @@ export interface CollegeData {
   tuitionInState: number;
   tuitionOutState: number;
   roomAndBoard: number;
+  costOfAttendance?: number;
 }
 
 export interface ChildProfile {
@@ -14,13 +15,18 @@ export interface ChildProfile {
   expectedReturnRate: number;
   collegeStartDate: string; // ISO format
   targetCollege?: CollegeData;
+  collegeInflationRate?: number;
+  stopContributingAtCollege?: boolean;
+  collegeDurationYears?: number;
 }
 
 export interface YearlyData {
   year: number;
   totalPrincipal: number;
   totalEarnings: number;
+  totalTuitionPaid: number;
   balance: number;
+  label: string;
 }
 
 export interface CalculationResult {
@@ -28,5 +34,6 @@ export interface CalculationResult {
   finalBalance: number;
   totalContributions: number;
   totalEarnings: number;
+  totalTuitionPaid: number;
   monthsToCollege: number;
 }
