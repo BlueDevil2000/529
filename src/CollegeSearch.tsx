@@ -14,30 +14,40 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (query.length > 2) {
+      if (query.trim().length > 3) { // Require 4+ chars to save requests
         searchColleges();
       } else {
         setResults([]);
+        setError(null);
       }
-    }, 500);
+    }, 800); // Wait longer (800ms) to ensure they finished typing
 
     return () => clearTimeout(timer);
   }, [query]);
 
   const searchColleges = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch(
-        `${BASE_URL}?api_key=${API_KEY}&school.name=${query}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year&per_page=5`
+        `${BASE_URL}?api_key=${API_KEY}&school.name=${encodeURIComponent(query)}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year&per_page=5`
       );
+      
+      if (response.status === 429) {
+        setError('Government API limit reached. Try again in an hour or enter manually.');
+        return;
+      }
+
       const data = await response.json();
       setResults(data.results || []);
       setShowDropdown(true);
-    } catch (error) {
-      console.error('Error fetching colleges:', error);
+    } catch (err) {
+      console.error('Error fetching colleges:', err);
+      setError('Search unavailable. Please try manual entry.');
     } finally {
       setLoading(false);
     }
@@ -76,6 +86,10 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
           </div>
         )}
       </div>
+
+      {error && (
+        <p className="mt-1 text-[10px] text-red-500 font-medium">{error}</p>
+      )}
 
       {showDropdown && results.length > 0 && (
         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
