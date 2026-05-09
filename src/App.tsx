@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Plus, User, Trash2, Cloud, CloudOff } from 'lucide-react';
+import { Calculator, Plus, User, Trash2, Cloud, CloudOff, Loader2 } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import CalculatorForm from './CalculatorForm';
@@ -12,9 +12,10 @@ function App() {
   const [profiles, setProfiles] = useState<ChildProfile[]>([]);
   const [activeId, setActiveId] = useState('1');
   const [isSyncing, setIsSyncing] = useState(true);
-  const familyId = 'shared-family';
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const familyId = 'primary-family-shared';
 
-  // Clear URL parameters to stay at root link
+  // Force clean URL
   useEffect(() => {
     if (window.location.search) {
       const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
@@ -24,14 +25,19 @@ function App() {
 
   // Sync with Firestore
   useEffect(() => {
+    console.log("Connecting to cloud...");
     const docRef = doc(db, 'families', familyId);
+    
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.profiles) setProfiles(data.profiles);
-        if (data.activeId) setActiveId(data.activeId);
+        console.log("Cloud data received:", data);
+        if (data.profiles && data.profiles.length > 0) {
+          setProfiles(data.profiles);
+          if (data.activeId) setActiveId(data.activeId);
+        }
       } else {
-        // Initialize shared family in cloud ONLY if it has never existed
+        console.log("No cloud data found, initializing...");
         const initialProfiles = [
           {
             id: '1',
@@ -45,6 +51,7 @@ function App() {
         setDoc(docRef, { profiles: initialProfiles, activeId: '1' });
       }
       setIsSyncing(false);
+      setHasLoaded(true);
     }, (error) => {
       console.error("Firestore sync error:", error);
       setIsSyncing(false);
@@ -53,26 +60,23 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  const activeProfile = useMemo(() => 
-    profiles.find(p => p.id === activeId) || profiles[0] || {
-      id: '1',
-      name: 'Loading...',
-      initialBalance: 0,
-      monthlyContribution: 0,
-      expectedReturnRate: 0,
-      collegeStartDate: '2030-01',
-    }, 
-  [profiles, activeId]);
+  const activeProfile = useMemo(() => {
+    return profiles.find(p => p.id === activeId) || profiles[0];
+  }, [profiles, activeId]);
 
-  const calculationResult = useMemo(() => 
-    calculate529Growth(activeProfile), 
-  [activeProfile]);
+  const calculationResult = useMemo(() => {
+    if (!activeProfile) return null;
+    return calculate529Growth(activeProfile);
+  }, [activeProfile]);
 
-  const targetCost = useMemo(() => 
-    calculateTotalCollegeCost(activeProfile.targetCollege),
-  [activeProfile.targetCollege]);
+  const targetCost = useMemo(() => {
+    if (!activeProfile) return 0;
+    return calculateTotalCollegeCost(activeProfile.targetCollege);
+  }, [activeProfile.targetCollege]);
 
   const pushToCloud = (newProfiles: ChildProfile[], newActiveId?: string) => {
+    if (!hasLoaded) return; // Never save if we haven't finished loading
+    console.log("Saving to cloud...");
     setDoc(doc(db, 'families', familyId), { 
       profiles: newProfiles, 
       activeId: newActiveId || activeId 
@@ -80,12 +84,14 @@ function App() {
   };
 
   const updateProfile = (updated: ChildProfile) => {
+    if (!hasLoaded) return;
     const newProfiles = profiles.map(p => p.id === updated.id ? updated : p);
     setProfiles(newProfiles);
     pushToCloud(newProfiles);
   };
 
   const addProfile = () => {
+    if (!hasLoaded) return;
     const newId = Math.random().toString(36).substr(2, 9);
     const newProfile: ChildProfile = {
       id: newId,
@@ -103,13 +109,22 @@ function App() {
 
   const deleteProfile = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (profiles.length === 1) return;
+    if (profiles.length <= 1) return;
     const filtered = profiles.filter(p => p.id !== id);
-    setProfiles(filtered);
     const newActive = activeId === id ? filtered[0].id : activeId;
-    if (activeId === id) setActiveId(newActive);
+    setProfiles(filtered);
+    setActiveId(newActive);
     pushToCloud(filtered, newActive);
   };
+
+  if (!hasLoaded) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <Loader2 className="h-12 w-12 text-blue-600 animate-spin mb-4" />
+        <p className="text-gray-600 font-medium">Connecting to family data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -165,17 +180,22 @@ function App() {
           ))}
         </div>
 
-        <CalculatorForm profile={activeProfile} onChange={updateProfile} />
-        
-        <SummaryStats result={calculationResult} targetCost={targetCost} />
-        
-        <GrowthChart data={calculationResult.yearlyData} />
+        {activeProfile && (
+          <>
+            <CalculatorForm profile={activeProfile} onChange={updateProfile} />
+            {calculationResult && (
+              <>
+                <SummaryStats result={calculationResult} targetCost={targetCost} />
+                <GrowthChart data={calculationResult.yearlyData} />
+              </>
+            )}
+          </>
+        )}
         
         <div className="mt-8 text-sm text-gray-500 text-center bg-white p-4 rounded-lg shadow-inner">
-          <p className="font-semibold text-gray-700 mb-1">How it works</p>
+          <p className="font-semibold text-gray-700 mb-1">Shared Family Planner</p>
           <p>
-            Projections are based on monthly compounding. College costs are estimated as (Tuition + Room & Board) × 4 years.
-            Data provided by the US Dept. of Education College Scorecard.
+            This data is shared across your family. Any changes you make are saved instantly to the cloud.
           </p>
         </div>
       </div>
