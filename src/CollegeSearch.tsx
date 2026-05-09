@@ -34,7 +34,7 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
     setError(null);
     try {
       const response = await fetch(
-        `${BASE_URL}?api_key=${API_KEY}&school.name=${encodeURIComponent(query)}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year&per_page=20`
+        `${BASE_URL}?api_key=${API_KEY}&school.name=${encodeURIComponent(query)}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year,latest.type&per_page=20`
       );
       
       if (response.status === 429) {
@@ -54,6 +54,9 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
   };
 
   const handleSelect = (school: any) => {
+    // robust year check
+    const apiDataYear = new Date().getFullYear() - 2; 
+
     // Robust data sniffer: The API sometimes returns nulls or zero for certain fields.
     // We prioritize the total Cost of Attendance (COA), then fall back to summing parts.
     const coa = school['latest.cost.attendance.academic_year'];
@@ -67,6 +70,7 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
       tuitionOutState: school['latest.cost.tuition.out_of_state'] || 0,
       roomAndBoard: rb || 0,
       costOfAttendance: coa || (tuition && rb ? (tuition + rb) : (tuition || coa || 0)),
+      dataYear: apiDataYear,
     });
     setQuery('');
     setShowDropdown(false);

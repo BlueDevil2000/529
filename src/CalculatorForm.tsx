@@ -285,7 +285,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
                 <Info className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
                 <div className="space-y-2 w-full">
                   <p className="text-[11px] text-orange-800 leading-tight font-medium">
-                    With <strong>{profile.collegeInflationRate ?? 4.5}%</strong> inflation, college will cost <strong>{((inflatedCost / (costTodayTotal || 1) - 1) * 100).toFixed(0)}%</strong> more by her {yearsFromTodayToStart.toFixed(1)}y start date.
+                    With <strong>{profile.collegeInflationRate ?? 4.5}%</strong> inflation, her first year will cost <strong>{formatCurrency(costTodayAnnual * Math.pow(1 + (profile.collegeInflationRate ?? 4.5)/100, yearsFromTodayToStart))}</strong> (<strong>{((Math.pow(1 + (profile.collegeInflationRate ?? 4.5)/100, yearsFromTodayToStart) - 1) * 100).toFixed(1)}%</strong> more than today).
                   </p>
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-orange-400 uppercase">Adjust Inflation Rate</label>
