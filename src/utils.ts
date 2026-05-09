@@ -33,14 +33,13 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
   
   const yearlyData: YearlyData[] = [];
   
-  // Base cost is derived from the "Smart Bridge" logic
-  // We assume the data is from 2 years ago (2022) if not specified
-  const dataYear = targetCollege?.dataYear || 2022;
+  // We assume the data is from 2 years prior to the current year if not specified
   const currentYear = new Date().getFullYear();
+  const dataYear = targetCollege?.dataYear || (currentYear - 2); 
   const lagYears = Math.max(0, currentYear - dataYear);
   
-  // Inflate the base price to match Today's real price
-  const baseCostToday = calculateTotalCollegeCost(targetCollege) * Math.pow(1 + yearlyInflation, lagYears);
+  // Inflate the base price to match Today's real price (e.g. 2026)
+  const baseCostToday = (targetCollege?.costOfAttendance || 0) * Math.pow(1 + yearlyInflation, lagYears);
   const annualBaseToday = baseCostToday / 4;
 
   // Year 0 (Anchor Point)

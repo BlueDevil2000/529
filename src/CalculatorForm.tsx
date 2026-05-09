@@ -51,8 +51,18 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
     setIsManual(false);
   };
 
+  const currentYear = new Date().getFullYear();
+  const dataYear = profile.targetCollege?.dataYear || (currentYear - 4); // Default to 4yr lag for safety
+  const lagYears = Math.max(0, currentYear - dataYear);
+  const inflationRate = profile.collegeInflationRate || 4.5;
+  const inflation = inflationRate / 100;
+  
+  // The 'Real Today' cost (bridged to current year)
+  const costTodayAnnual = (profile.targetCollege?.costOfAttendance || 0) * Math.pow(1 + inflation, lagYears);
+  const costTodayTotal = costTodayAnnual * 4;
+  
   const yearsToCollege = profile ? Math.max(0, Math.ceil(differenceInMonths(parseISO(profile.collegeStartDate), new Date()) / 12)) : 0;
-  const inflatedCost = profile?.targetCollege ? calculateInflatedTotalCost(profile.targetCollege, yearsToCollege, profile.collegeInflationRate || 4.5) : 0;
+  const inflatedCost = profile?.targetCollege ? calculateInflatedTotalCost(profile.targetCollege, yearsToCollege, inflationRate) : 0;
 
   return (
     <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 border border-gray-100">
@@ -227,7 +237,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
               <div className="space-y-4">
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Annual Cost (Editable)</label>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase leading-none">Annual Cost (Est. {currentYear})</label>
                     <a 
                       href={profile.targetCollege.id ? `https://nces.ed.gov/collegenavigator/?id=${profile.targetCollege.id}#expenses` : "#"}
                       target="_blank"
@@ -238,22 +248,31 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
                       <TrendingUp className="h-2.5 w-2.5 ml-1 transform rotate-45" />
                     </a>
                   </div>
-                  <input
-                    type="number"
-                    name="costOfAttendance"
-                    value={profile.targetCollege.costOfAttendance || 0}
-                    onChange={handleManualCollegeChange}
-                    className="w-full p-3 text-xl font-black text-blue-600 bg-blue-50 border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      name="costOfAttendance"
+                      value={Math.round(costTodayAnnual)}
+                      onChange={(e) => {
+                        const newVal = parseFloat(e.target.value) || 0;
+                        const baseVal = newVal / Math.pow(1 + (profile.collegeInflationRate || 4.5) / 100, lagYears);
+                        handleManualCollegeChange({ target: { name: 'costOfAttendance', value: baseVal.toString() } } as any);
+                      }}
+                      className="w-full p-3 text-2xl font-black text-blue-600 bg-blue-50 border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <span className="text-[10px] font-bold text-blue-300 uppercase">{currentYear}</span>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
                     <div>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">4yr Total (Today)</span>
-                      <p className="text-md font-bold text-gray-600">{formatCurrency((profile.targetCollege.costOfAttendance || 0) * 4)}</p>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">4yr Total ({currentYear})</span>
+                      <p className="text-md font-bold text-gray-600">{formatCurrency(costTodayTotal)}</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] font-bold text-orange-500 uppercase block mb-1">4yr Total ({yearsToCollege}y)</span>
+                      <span className="text-[10px] font-bold text-orange-500 uppercase block mb-1">Future 4yr Total ({yearsToCollege}y)</span>
                       <p className="text-md font-bold text-orange-600">{formatCurrency(inflatedCost)}</p>
                     </div>
                 </div>
@@ -261,16 +280,16 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
               
               <div className="mt-5 bg-orange-50 p-3 rounded-lg flex items-start space-x-2 border border-orange-100">
                 <Info className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                <div className="space-y-2">
+                <div className="space-y-2 w-full">
                   <p className="text-[11px] text-orange-800 leading-tight font-medium">
-                    With <strong>{profile.collegeInflationRate ?? 4.5}%</strong> yearly inflation, college will cost <strong>{((inflatedCost / (((profile.targetCollege.costOfAttendance || 1) * 4) || 1) - 1) * 100).toFixed(0)}%</strong> more by their start date.
+                    With <strong>{inflationRate}%</strong> inflation, college will cost <strong>{((inflatedCost / (costTodayTotal || 1) - 1) * 100).toFixed(0)}%</strong> more by their start date.
                   </p>
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-orange-400 uppercase">Adjust Inflation Rate</label>
                     <input
                       type="number"
                       name="collegeInflationRate"
-                      value={profile.collegeInflationRate ?? 4.5}
+                      value={inflationRate}
                       onChange={handleChange}
                       className="w-full p-1.5 text-xs bg-white border border-orange-200 rounded focus:ring-1 focus:ring-orange-500 outline-none"
                       step="0.1"
