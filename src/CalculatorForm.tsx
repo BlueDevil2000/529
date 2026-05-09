@@ -202,23 +202,27 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
               </button>
               <h3 className="font-bold text-lg text-blue-800 pr-6">{profile.targetCollege.name}</h3>
               
-              <div className="mt-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Sticker Price Today:</span>
-                  <span className="font-medium">{formatCurrency(calculateTotalCollegeCost(profile.targetCollege) / 4)}/yr</span>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Annual Cost (Editable)</label>
+                  <input
+                    type="number"
+                    name="costOfAttendance"
+                    value={profile.targetCollege.costOfAttendance || 0}
+                    onChange={handleManualCollegeChange}
+                    className="w-full p-2 text-lg font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded focus:ring-blue-500 outline-none"
+                  />
                 </div>
                 
-                <div className="pt-2 border-t border-gray-50">
-                  <div className="flex justify-between items-end">
+                <div className="pt-2 border-t border-gray-50 flex justify-between items-end">
                     <div>
                       <span className="text-xs font-semibold text-gray-400 uppercase">4-Year Total (Today)</span>
-                      <p className="text-lg font-bold text-gray-700">{formatCurrency(calculateTotalCollegeCost(profile.targetCollege))}</p>
+                      <p className="text-lg font-bold text-gray-700">{formatCurrency((profile.targetCollege.costOfAttendance || 0) * 4)}</p>
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-semibold text-orange-500 uppercase">Projected Total ({yearsToCollege}y)</span>
                       <p className="text-lg font-bold text-orange-600">{formatCurrency(inflatedCost)}</p>
                     </div>
-                  </div>
                 </div>
               </div>
               
