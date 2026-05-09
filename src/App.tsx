@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Calculator, Plus, User, Trash2, Cloud, CloudOff, Loader2 } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { format } from 'date-fns';
 import { db } from './firebase';
 import CalculatorForm from './CalculatorForm';
 import GrowthChart from './GrowthChart';
@@ -97,6 +98,7 @@ function App() {
       id: newId,
       name: `Kid ${profiles.length + 1}`,
       initialBalance: 0,
+      initialBalanceDate: format(new Date(), 'yyyy-MM'),
       monthlyContribution: 100,
       expectedReturnRate: 7.0,
       collegeStartDate: '2040-09',

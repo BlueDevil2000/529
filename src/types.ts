@@ -5,15 +5,17 @@ export interface CollegeData {
   tuitionOutState: number;
   roomAndBoard: number;
   costOfAttendance?: number;
+  dataYear?: number; // The year the data was reported
 }
 
 export interface ChildProfile {
   id: string;
   name: string;
   initialBalance: number;
+  initialBalanceDate: string; // ISO Month (YYYY-MM)
   monthlyContribution: number;
   expectedReturnRate: number;
-  collegeStartDate: string; // ISO format
+  collegeStartDate: string; // ISO Month (YYYY-MM)
   targetCollege?: CollegeData;
   collegeInflationRate?: number;
   stopContributingAtCollege?: boolean;

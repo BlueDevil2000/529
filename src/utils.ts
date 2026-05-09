@@ -1,9 +1,10 @@
-import { differenceInMonths, parseISO } from 'date-fns';
+import { differenceInMonths, parseISO, startOfMonth, format } from 'date-fns';
 import { ChildProfile, CalculationResult, YearlyData } from './types';
 
 export function calculate529Growth(profile: ChildProfile): CalculationResult {
   const { 
     initialBalance, 
+    initialBalanceDate = format(new Date(), 'yyyy-MM'),
     monthlyContribution, 
     expectedReturnRate, 
     collegeStartDate, 
@@ -13,10 +14,14 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
     collegeDurationYears = 4
   } = profile;
   
-  const today = new Date();
+  const today = startOfMonth(new Date());
+  const anchorDate = parseISO(initialBalanceDate);
   const startDate = parseISO(collegeStartDate);
-  const monthsToCollege = Math.max(0, differenceInMonths(startDate, today));
-  const yearsToCollegeStart = Math.ceil(monthsToCollege / 12);
+  
+  // Total months from Anchor -> College Start
+  const totalMonthsHorizon = Math.max(0, differenceInMonths(startDate, anchorDate));
+  // Months already passed (Anchor -> Today)
+  const monthsPassed = Math.max(0, differenceInMonths(today, anchorDate));
   
   const monthlyRate = (expectedReturnRate / 100) / 12;
   const yearlyInflation = collegeInflationRate / 100;
@@ -28,55 +33,61 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
   
   const yearlyData: YearlyData[] = [];
   
-  // Year 0
+  // Base cost is derived from the "Smart Bridge" logic
+  // We assume the data is from 2 years ago (2022) if not specified
+  const dataYear = targetCollege?.dataYear || 2022;
+  const currentYear = new Date().getFullYear();
+  const lagYears = Math.max(0, currentYear - dataYear);
+  
+  // Inflate the base price to match Today's real price
+  const baseCostToday = calculateTotalCollegeCost(targetCollege) * Math.pow(1 + yearlyInflation, lagYears);
+  const annualBaseToday = baseCostToday / 4;
+
+  // Year 0 (Anchor Point)
   yearlyData.push({
     year: 0,
     totalPrincipal: totalContributions,
     totalEarnings: 0,
     totalTuitionPaid: 0,
     balance: currentBalance,
-    label: 'Now'
+    label: format(anchorDate, 'MMM yy')
   });
 
-  const baseAnnualCost = calculateTotalCollegeCost(targetCollege) / 4;
+  // Accumulation Phase (Months from Anchor to College Start)
+  for (let m = 1; m <= totalMonthsHorizon; m++) {
+    currentBalance += monthlyContribution;
+    totalContributions += monthlyContribution;
+    const interest = currentBalance * monthlyRate;
+    currentBalance += interest;
+    totalEarnings += interest;
 
-  // PHASE 1: Accumulation (Pre-College)
-  for (let year = 1; year <= yearsToCollegeStart; year++) {
-    const monthsInThisYear = year === yearsToCollegeStart ? (monthsToCollege % 12 || 12) : 12;
-    
-    for (let month = 1; month <= monthsInThisYear; month++) {
-      currentBalance += monthlyContribution;
-      totalContributions += monthlyContribution;
-      const interest = currentBalance * monthlyRate;
-      currentBalance += interest;
-      totalEarnings += interest;
+    // Add a data point every 12 months or at current date milestone
+    if (m % 12 === 0 || m === monthsPassed) {
+      yearlyData.push({
+        year: Math.floor(m / 12),
+        totalPrincipal: totalContributions,
+        totalEarnings: totalEarnings,
+        totalTuitionPaid: 0,
+        balance: currentBalance,
+        label: m === monthsPassed ? 'Today' : `Yr ${Math.floor(m / 12)}`
+      });
     }
-    
-    yearlyData.push({
-      year,
-      totalPrincipal: totalContributions,
-      totalEarnings: totalEarnings,
-      totalTuitionPaid: 0,
-      balance: currentBalance,
-      label: `Year ${year}`
-    });
   }
 
-  // PHASE 2: Drawdown (College Years)
+  // Drawdown Phase (College Years)
+  const yearsToCollegeStartFromAnchor = totalMonthsHorizon / 12;
+
   for (let collegeYear = 1; collegeYear <= collegeDurationYears; collegeYear++) {
-    const currentYearNum = yearsToCollegeStart + collegeYear;
-    // Inflate the cost to this specific future year
-    const inflatedAnnualCost = baseAnnualCost * Math.pow(1 + yearlyInflation, currentYearNum);
+    // Inflate the cost relative to the Anchor Date
+    const inflatedAnnualCost = annualBaseToday * Math.pow(1 + yearlyInflation, yearsToCollegeStartFromAnchor + (collegeYear - 1));
     const semesterCost = inflatedAnnualCost / 2;
 
     for (let month = 1; month <= 12; month++) {
-      // Contributions stop if configured
       if (!stopContributingAtCollege) {
         currentBalance += monthlyContribution;
         totalContributions += monthlyContribution;
       }
 
-      // Tuition Deductions (Semester 1 in Month 1/Aug, Semester 2 in Month 6/Jan)
       if (month === 1 || month === 6) {
         currentBalance -= semesterCost;
         totalTuitionPaid += semesterCost;
@@ -88,7 +99,7 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
     }
 
     yearlyData.push({
-      year: currentYearNum,
+      year: Math.floor(totalMonthsHorizon / 12) + collegeYear,
       totalPrincipal: totalContributions,
       totalEarnings: totalEarnings,
       totalTuitionPaid: totalTuitionPaid,
@@ -103,7 +114,7 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
     totalContributions,
     totalEarnings,
     totalTuitionPaid,
-    monthsToCollege,
+    monthsToCollege: totalMonthsHorizon - monthsPassed,
   };
 }
 
@@ -117,7 +128,6 @@ export function formatCurrency(value: number) {
 
 export function calculateTotalCollegeCost(college: any): number {
   if (!college) return 0;
-  // Use sticker price COA if available, otherwise sum tuition + room/board
   const annualCost = college.costOfAttendance || 
                      ((college.tuitionInState || college.tuitionOutState || 0) + (college.roomAndBoard || 0));
   return annualCost * 4;
@@ -127,12 +137,18 @@ export function calculateInflatedTotalCost(college: any, yearsToCollege: number,
   const baseCost = calculateTotalCollegeCost(college);
   if (baseCost === 0) return 0;
   
-  const annualBase = baseCost / 4;
+  // Apply "Smart Bridge" to today first
+  const dataYear = college.dataYear || 2022;
+  const currentYear = new Date().getFullYear();
+  const lagYears = Math.max(0, currentYear - dataYear);
+  const inflation = inflationRate / 100;
+  
+  const costToday = baseCost * Math.pow(1 + inflation, lagYears);
+  const annualBase = costToday / 4;
   let totalInflated = 0;
   
-  // Sum 4 inflated years starting at yearsToCollege
   for (let i = 0; i < 4; i++) {
-    totalInflated += annualBase * Math.pow(1 + (inflationRate / 100), yearsToCollege + i);
+    totalInflated += annualBase * Math.pow(1 + inflation, yearsToCollege + i);
   }
   
   return totalInflated;
