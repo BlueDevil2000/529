@@ -34,7 +34,7 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
     setError(null);
     try {
       const response = await fetch(
-        `${BASE_URL}?api_key=${API_KEY}&school.name=${encodeURIComponent(query)}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year&per_page=5`
+        `${BASE_URL}?api_key=${API_KEY}&school.name=${encodeURIComponent(query)}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year&per_page=20`
       );
       
       if (response.status === 429) {
