@@ -54,16 +54,23 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
   };
 
   const handleSelect = (school: any) => {
+    // Robust data sniffer: The API sometimes returns nulls or zero for certain fields.
+    // We prioritize the total Cost of Attendance (COA), then fall back to summing parts.
+    const coa = school['latest.cost.attendance.academic_year'];
+    const tuition = school['latest.cost.tuition.in_state'] || school['latest.cost.tuition.out_of_state'];
+    const rb = school['latest.cost.roomboard.oncampus'];
+
     onSelect({
       id: school.id,
       name: school['school.name'],
-      tuitionInState: school['latest.cost.tuition.in_state'],
-      tuitionOutState: school['latest.cost.tuition.out_of_state'],
-      roomAndBoard: school['latest.cost.roomboard.oncampus'],
-      costOfAttendance: school['latest.cost.attendance.academic_year'],
+      tuitionInState: school['latest.cost.tuition.in_state'] || 0,
+      tuitionOutState: school['latest.cost.tuition.out_of_state'] || 0,
+      roomAndBoard: rb || 0,
+      costOfAttendance: coa || (tuition && rb ? (tuition + rb) : (tuition || coa || 0)),
     });
     setQuery('');
     setShowDropdown(false);
+    setError(null);
   };
 
   return (
