@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChildProfile, CollegeData } from './types';
 import CollegeSearch from './CollegeSearch';
 import { School, X, TrendingUp, Info } from 'lucide-react';
-import { formatCurrency, calculateTotalCollegeCost, calculateInflatedTotalCost } from './utils';
+import { formatCurrency, calculateInflatedTotalCost } from './utils';
 import { differenceInMonths, parseISO } from 'date-fns';
 
 interface CalculatorFormProps {
@@ -30,7 +30,6 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
       targetCollege: {
         ...currentCollege,
         [name]: name === 'name' ? value : parseFloat(value) || 0,
-        // When entering manually, we set costOfAttendance as the primary driver
         costOfAttendance: name === 'costOfAttendance' ? parseFloat(value) || 0 : currentCollege.costOfAttendance
       }
     });
@@ -203,16 +202,25 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
               <h3 className="font-bold text-lg text-blue-800 pr-6">{profile.targetCollege.name}</h3>
               
               <div className="mt-3 space-y-3">
-                <div>
+                <div className="flex items-center justify-between">
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Annual Cost (Editable)</label>
-                  <input
-                    type="number"
-                    name="costOfAttendance"
-                    value={profile.targetCollege.costOfAttendance || 0}
-                    onChange={handleManualCollegeChange}
-                    className="w-full p-2 text-lg font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded focus:ring-blue-500 outline-none"
-                  />
+                  <a 
+                    href={profile.targetCollege.id ? `https://nces.ed.gov/collegenavigator/?id=${profile.targetCollege.id}#expenses` : "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-bold text-blue-500 hover:underline flex items-center"
+                  >
+                    Verify on Official NCES Site
+                    <TrendingUp className="h-2.5 w-2.5 ml-1 transform rotate-45" />
+                  </a>
                 </div>
+                <input
+                  type="number"
+                  name="costOfAttendance"
+                  value={profile.targetCollege.costOfAttendance || 0}
+                  onChange={handleManualCollegeChange}
+                  className="w-full p-2 text-lg font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded focus:ring-blue-500 outline-none"
+                />
                 
                 <div className="pt-2 border-t border-gray-50 flex justify-between items-end">
                     <div>
@@ -229,7 +237,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
               <div className="mt-4 bg-orange-50 p-2 rounded flex items-start space-x-2">
                 <Info className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
                 <p className="text-[11px] text-orange-700 leading-tight">
-                  With {profile.collegeInflationRate ?? 4.5}% inflation, college will cost {((inflatedCost / calculateTotalCollegeCost(profile.targetCollege) - 1) * 100).toFixed(0)}% more by the time they start.
+                  With {profile.collegeInflationRate ?? 4.5}% inflation, college will cost {((inflatedCost / ((profile.targetCollege.costOfAttendance || 1) * 4) - 1) * 100).toFixed(0)}% more by the time they start.
                 </p>
               </div>
             </div>
