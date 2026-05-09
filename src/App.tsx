@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Calculator, Plus, User, Trash2 } from 'lucide-react';
 import CalculatorForm from './CalculatorForm';
 import GrowthChart from './GrowthChart';
@@ -7,17 +7,39 @@ import { ChildProfile } from './types';
 import { calculate529Growth, calculateTotalCollegeCost } from './utils';
 
 function App() {
-  const [profiles, setProfiles] = useState<ChildProfile[]>([
-    {
-      id: '1',
-      name: 'Kid 1',
-      initialBalance: 5000,
-      monthlyContribution: 250,
-      expectedReturnRate: 7.0,
-      collegeStartDate: '2035-09',
+  const [profiles, setProfiles] = useState<ChildProfile[]>(() => {
+    const saved = localStorage.getItem('529_profiles');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved profiles', e);
+      }
     }
-  ]);
-  const [activeId, setActiveId] = useState('1');
+    return [
+      {
+        id: '1',
+        name: 'Kid 1',
+        initialBalance: 5000,
+        monthlyContribution: 250,
+        expectedReturnRate: 7.0,
+        collegeStartDate: '2035-09',
+      }
+    ];
+  });
+
+  const [activeId, setActiveId] = useState(() => {
+    return localStorage.getItem('529_activeId') || '1';
+  });
+
+  // Save to localStorage whenever profiles or activeId change
+  useMemo(() => {
+    localStorage.setItem('529_profiles', JSON.stringify(profiles));
+  }, [profiles]);
+
+  useMemo(() => {
+    localStorage.setItem('529_activeId', activeId);
+  }, [activeId]);
 
   const activeProfile = useMemo(() => 
     profiles.find(p => p.id === activeId) || profiles[0], 
