@@ -33,12 +33,12 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
   
   const yearlyData: YearlyData[] = [];
   
-  // We assume the data is from 2 years prior to the current year if not specified
+  // We assume a 4-year lag for government reporting (e.g. 2022 data showing in 2026)
   const currentYear = new Date().getFullYear();
-  const dataYear = targetCollege?.dataYear || (currentYear - 2); 
+  const dataYear = targetCollege?.dataYear || (currentYear - 4); 
   const lagYears = Math.max(0, currentYear - dataYear);
   
-  // Inflate the base price to match Today's real price (e.g. 2026)
+  // This is the 'Real Today' baseline (May 2026)
   const baseCostToday = (targetCollege?.costOfAttendance || 0) * Math.pow(1 + yearlyInflation, lagYears);
   const annualBaseToday = baseCostToday / 4;
 

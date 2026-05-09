@@ -52,12 +52,12 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
   };
 
   const currentYear = new Date().getFullYear();
-  const dataYear = profile.targetCollege?.dataYear || (currentYear - 4); // Default to 4yr lag for safety
+  const dataYear = profile.targetCollege?.dataYear || (currentYear - 4);
   const lagYears = Math.max(0, currentYear - dataYear);
   const inflationRate = profile.collegeInflationRate || 4.5;
   const inflation = inflationRate / 100;
   
-  // The 'Real Today' cost (bridged to current year)
+  // The 'Real Today' cost (bridged to current year 2026)
   const costTodayAnnual = (profile.targetCollege?.costOfAttendance || 0) * Math.pow(1 + inflation, lagYears);
   const costTodayTotal = costTodayAnnual * 4;
   
