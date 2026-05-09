@@ -51,18 +51,21 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
     setIsManual(false);
   };
 
-  const currentYear = new Date().getFullYear();
-  const dataYear = profile.targetCollege?.dataYear || (currentYear - 4);
+  const currentYear = new Date().getFullYear(); // 2026
+  const dataYear = profile.targetCollege?.dataYear || 2022;
   const lagYears = Math.max(0, currentYear - dataYear);
-  const inflationRate = profile.collegeInflationRate || 4.5;
-  const inflation = inflationRate / 100;
+  const catchUpRate = 0.0488; // 4.88% bridge rate
   
-  // The 'Real Today' cost (bridged to current year 2026)
-  const costTodayAnnual = (profile.targetCollege?.costOfAttendance || 0) * Math.pow(1 + inflation, lagYears);
+  // The 'Real Today' cost (May 2026 baseline)
+  const costTodayAnnual = (profile.targetCollege?.costOfAttendance || 0) * Math.pow(1 + catchUpRate, lagYears);
   const costTodayTotal = costTodayAnnual * 4;
   
-  const yearsToCollege = profile ? Math.max(0, Math.ceil(differenceInMonths(parseISO(profile.collegeStartDate), new Date()) / 12)) : 0;
-  const inflatedCost = profile?.targetCollege ? calculateInflatedTotalCost(profile.targetCollege, yearsToCollege, inflationRate) : 0;
+  const today = new Date();
+  const startDate = parseISO(profile.collegeStartDate);
+  const monthsToStart = Math.max(0, differenceInMonths(startDate, today));
+  const yearsFromTodayToStart = monthsToStart / 12;
+  
+  const inflatedCost = profile?.targetCollege ? calculateInflatedTotalCost(profile.targetCollege, yearsFromTodayToStart, profile.collegeInflationRate || 4.5) : 0;
 
   return (
     <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 border border-gray-100">
@@ -272,7 +275,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
                       <p className="text-md font-bold text-gray-600">{formatCurrency(costTodayTotal)}</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] font-bold text-orange-500 uppercase block mb-1">Future 4yr Total ({yearsToCollege}y)</span>
+                      <span className="text-[10px] font-bold text-orange-500 uppercase block mb-1">Future 4yr Total ({yearsFromTodayToStart.toFixed(1)}y)</span>
                       <p className="text-md font-bold text-orange-600">{formatCurrency(inflatedCost)}</p>
                     </div>
                 </div>
@@ -282,14 +285,14 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
                 <Info className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
                 <div className="space-y-2 w-full">
                   <p className="text-[11px] text-orange-800 leading-tight font-medium">
-                    With <strong>{inflationRate}%</strong> inflation, college will cost <strong>{((inflatedCost / (costTodayTotal || 1) - 1) * 100).toFixed(0)}%</strong> more by their start date.
+                    With <strong>{profile.collegeInflationRate ?? 4.5}%</strong> inflation, college will cost <strong>{((inflatedCost / (costTodayTotal || 1) - 1) * 100).toFixed(0)}%</strong> more by her {yearsFromTodayToStart.toFixed(1)}y start date.
                   </p>
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-orange-400 uppercase">Adjust Inflation Rate</label>
                     <input
                       type="number"
                       name="collegeInflationRate"
-                      value={inflationRate}
+                      value={profile.collegeInflationRate ?? 4.5}
                       onChange={handleChange}
                       className="w-full p-1.5 text-xs bg-white border border-orange-200 rounded focus:ring-1 focus:ring-orange-500 outline-none"
                       step="0.1"

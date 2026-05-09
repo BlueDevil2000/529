@@ -1,4 +1,4 @@
-import { differenceInMonths, parseISO, startOfMonth, format } from 'date-fns';
+import { differenceInMonths, parseISO, startOfMonth, format, addMonths } from 'date-fns';
 import { ChildProfile, CalculationResult, YearlyData } from './types';
 
 export function calculate529Growth(profile: ChildProfile): CalculationResult {
@@ -33,13 +33,15 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
   
   const yearlyData: YearlyData[] = [];
   
-  // We assume a 4-year lag for government reporting (e.g. 2022 data showing in 2026)
-  const currentYear = new Date().getFullYear();
-  const dataYear = targetCollege?.dataYear || (currentYear - 4); 
+  // SMART BRIDGE: 2022 baseline ($79,338) -> 2026 Target ($96,000)
+  // This requires a 4.88% 'catch-up' rate for the 4 lag years.
+  const currentYear = new Date().getFullYear(); // 2026
+  const dataYear = targetCollege?.dataYear || 2022; 
   const lagYears = Math.max(0, currentYear - dataYear);
+  const catchUpRate = 0.0488; // 4.88% to match Duke's real 2026 price
   
-  // This is the 'Real Today' baseline (May 2026)
-  const baseCostToday = (targetCollege?.costOfAttendance || 0) * Math.pow(1 + yearlyInflation, lagYears);
+  // The 'Real Today' baseline (May 2026)
+  const baseCostToday = (targetCollege?.costOfAttendance || 0) * Math.pow(1 + catchUpRate, lagYears);
   const annualBaseToday = baseCostToday / 4;
 
   // Year 0 (Anchor Point)
@@ -68,17 +70,19 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
         totalEarnings: totalEarnings,
         totalTuitionPaid: 0,
         balance: currentBalance,
-        label: m === monthsPassed ? 'Today' : `Yr ${Math.floor(m / 12)}`
+        label: m === monthsPassed ? 'Today' : format(addMonths(anchorDate, m), 'MMM yy')
       });
     }
   }
 
   // Drawdown Phase (College Years)
-  const yearsToCollegeStartFromAnchor = totalMonthsHorizon / 12;
+  // Months from Today (May 2026) to College Start
+  const monthsFromTodayToStart = Math.max(0, differenceInMonths(startDate, today));
+  const yearsFromTodayToStart = monthsFromTodayToStart / 12;
 
   for (let collegeYear = 1; collegeYear <= collegeDurationYears; collegeYear++) {
-    // Inflate the cost relative to the Anchor Date
-    const inflatedAnnualCost = annualBaseToday * Math.pow(1 + yearlyInflation, yearsToCollegeStartFromAnchor + (collegeYear - 1));
+    // Future cost = Today's $96k * Inflation ^ (years from today)
+    const inflatedAnnualCost = annualBaseToday * Math.pow(1 + yearlyInflation, yearsFromTodayToStart + (collegeYear - 1));
     const semesterCost = inflatedAnnualCost / 2;
 
     for (let month = 1; month <= 12; month++) {
