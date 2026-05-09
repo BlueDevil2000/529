@@ -11,27 +11,11 @@ import { calculate529Growth, calculateTotalCollegeCost } from './utils';
 function App() {
   const [profiles, setProfiles] = useState<ChildProfile[]>([]);
   const [activeId, setActiveId] = useState('1');
-  const [familyId, setFamilyId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(true);
-
-  // Initialize Family ID from URL or generate new one
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    let id = params.get('family');
-    
-    if (!id) {
-      id = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?family=${id}`;
-      window.history.pushState({ path: newUrl }, '', newUrl);
-    }
-    
-    setFamilyId(id);
-  }, []);
+  const familyId = 'shared-family';
 
   // Sync with Firestore
   useEffect(() => {
-    if (!familyId) return;
-
     const docRef = doc(db, 'families', familyId);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -39,7 +23,7 @@ function App() {
         if (data.profiles) setProfiles(data.profiles);
         if (data.activeId) setActiveId(data.activeId);
       } else {
-        // Initialize new family in cloud if it doesn't exist
+        // Initialize shared family in cloud if it doesn't exist
         const initialProfiles = [
           {
             id: '1',
@@ -59,7 +43,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, [familyId]);
+  }, []);
 
   const activeProfile = useMemo(() => 
     profiles.find(p => p.id === activeId) || profiles[0] || {
@@ -81,7 +65,6 @@ function App() {
   [activeProfile.targetCollege]);
 
   const pushToCloud = (newProfiles: ChildProfile[], newActiveId?: string) => {
-    if (!familyId) return;
     setDoc(doc(db, 'families', familyId), { 
       profiles: newProfiles, 
       activeId: newActiveId || activeId 
@@ -120,11 +103,6 @@ function App() {
     pushToCloud(filtered, newActive);
   };
 
-  const copyShareLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert('Share link copied to clipboard!');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
@@ -139,20 +117,9 @@ function App() {
                 <Cloud className="h-5 w-5 text-emerald-500" />
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-1 flex items-center">
-              Family ID: <span className="font-mono font-bold ml-1 text-blue-600">{familyId}</span>
-            </p>
           </div>
           
           <div className="flex items-center space-x-2">
-            <button
-              onClick={copyShareLink}
-              className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors shadow-sm"
-              title="Copy shareable link"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </button>
             <button
               onClick={addProfile}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm"
@@ -201,6 +168,14 @@ function App() {
           <p>
             Projections are based on monthly compounding. College costs are estimated as (Tuition + Room & Board) × 4 years.
             Data provided by the US Dept. of Education College Scorecard.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;ded by the US Dept. of Education College Scorecard.
           </p>
         </div>
       </div>
