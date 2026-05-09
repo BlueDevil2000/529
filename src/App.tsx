@@ -7,7 +7,8 @@ import CalculatorForm from './CalculatorForm';
 import GrowthChart from './GrowthChart';
 import SummaryStats from './SummaryStats';
 import { ChildProfile } from './types';
-import { calculate529Growth, calculateTotalCollegeCost } from './utils';
+import { calculate529Growth, calculateInflatedTotalCost } from './utils';
+import { differenceInMonths, parseISO } from 'date-fns';
 
 function App() {
   const [profiles, setProfiles] = useState<ChildProfile[]>([]);
@@ -72,7 +73,8 @@ function App() {
 
   const targetCost = useMemo(() => {
     if (!activeProfile || !activeProfile.targetCollege) return 0;
-    return calculateTotalCollegeCost(activeProfile.targetCollege);
+    const yearsToCollege = Math.max(0, Math.ceil(differenceInMonths(parseISO(activeProfile.collegeStartDate), new Date()) / 12));
+    return calculateInflatedTotalCost(activeProfile.targetCollege, yearsToCollege, activeProfile.collegeInflationRate || 4.5);
   }, [activeProfile]); // Depend on activeProfile object directly for safety
 
   const pushToCloud = (newProfiles: ChildProfile[], newActiveId?: string) => {

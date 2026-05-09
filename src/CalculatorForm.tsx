@@ -258,7 +258,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
                       value={Math.round(costTodayAnnual)}
                       onChange={(e) => {
                         const newVal = parseFloat(e.target.value) || 0;
-                        const baseVal = newVal / Math.pow(1 + (profile.collegeInflationRate || 4.5) / 100, lagYears);
+                        const baseVal = newVal / Math.pow(1 + catchUpRate, lagYears);
                         handleManualCollegeChange({ target: { name: 'costOfAttendance', value: baseVal.toString() } } as any);
                       }}
                       className="w-full p-3 text-2xl font-black text-blue-600 bg-blue-50 border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"

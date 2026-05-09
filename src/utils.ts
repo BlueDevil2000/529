@@ -42,7 +42,7 @@ export function calculate529Growth(profile: ChildProfile): CalculationResult {
   
   // The 'Real Today' baseline (May 2026)
   const baseCostToday = (targetCollege?.costOfAttendance || 0) * Math.pow(1 + catchUpRate, lagYears);
-  const annualBaseToday = baseCostToday / 4;
+  const annualBaseToday = baseCostToday;
 
   // Year 0 (Anchor Point)
   yearlyData.push({
@@ -140,14 +140,15 @@ export function calculateInflatedTotalCost(college: any, yearsToCollege: number,
   const baseCost = calculateTotalCollegeCost(college);
   if (baseCost === 0) return 0;
   
-  // Apply "Smart Bridge" to today first
+  // Apply "Smart Bridge" to today first (May 2026)
   const dataYear = college.dataYear || 2022;
   const currentYear = new Date().getFullYear();
   const lagYears = Math.max(0, currentYear - dataYear);
-  const inflation = inflationRate / 100;
+  const catchUpRate = 0.0488; // Consistent 4.88% bridge rate
   
-  const costToday = baseCost * Math.pow(1 + inflation, lagYears);
+  const costToday = baseCost * Math.pow(1 + catchUpRate, lagYears);
   const annualBase = costToday / 4;
+  const inflation = inflationRate / 100;
   let totalInflated = 0;
   
   for (let i = 0; i < 4; i++) {
