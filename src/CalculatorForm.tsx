@@ -52,8 +52,8 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
     setIsManual(false);
   };
 
-  const yearsToCollege = Math.max(0, Math.ceil(differenceInMonths(parseISO(profile.collegeStartDate), new Date()) / 12));
-  const inflatedCost = calculateInflatedTotalCost(profile.targetCollege, yearsToCollege, profile.collegeInflationRate || 4.5);
+  const yearsToCollege = profile ? Math.max(0, Math.ceil(differenceInMonths(parseISO(profile.collegeStartDate), new Date()) / 12)) : 0;
+  const inflatedCost = profile?.targetCollege ? calculateInflatedTotalCost(profile.targetCollege, yearsToCollege, profile.collegeInflationRate || 4.5) : 0;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">

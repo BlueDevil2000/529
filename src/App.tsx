@@ -61,7 +61,7 @@ function App() {
   }, []);
 
   const activeProfile = useMemo(() => {
-    return profiles.find(p => p.id === activeId) || profiles[0];
+    return profiles.find(p => p.id === activeId) || profiles[0] || null;
   }, [profiles, activeId]);
 
   const calculationResult = useMemo(() => {
@@ -70,9 +70,9 @@ function App() {
   }, [activeProfile]);
 
   const targetCost = useMemo(() => {
-    if (!activeProfile) return 0;
+    if (!activeProfile || !activeProfile.targetCollege) return 0;
     return calculateTotalCollegeCost(activeProfile.targetCollege);
-  }, [activeProfile.targetCollege]);
+  }, [activeProfile]); // Depend on activeProfile object directly for safety
 
   const pushToCloud = (newProfiles: ChildProfile[], newActiveId?: string) => {
     if (!hasLoaded) return; // Never save if we haven't finished loading
