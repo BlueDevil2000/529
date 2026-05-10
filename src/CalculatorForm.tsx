@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChildProfile, CollegeData } from './types';
 import CollegeSearch from './CollegeSearch';
 import { School, X, TrendingUp, Info, Calendar } from 'lucide-react';
-import { formatCurrency, calculateInflatedTotalCost } from './utils';
+import { formatCurrency } from './utils';
 import { differenceInMonths, parseISO, format } from 'date-fns';
 
 interface CalculatorFormProps {
@@ -56,7 +56,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
   const lagYears = Math.max(0, currentYear - dataYear);
   const catchUpRate = 0.0488; // 4.88% bridge rate
   
-  // The 'Real Today' cost (May 2026 baseline)
+  // These are now reactively calculated during every render
   const costTodayAnnual = (profile.targetCollege?.costOfAttendance || 0) * Math.pow(1 + catchUpRate, lagYears);
   const costTodayTotal = costTodayAnnual * 4;
   
@@ -65,7 +65,16 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
   const monthsToStart = Math.max(0, differenceInMonths(startDate, today));
   const yearsFromTodayToStart = monthsToStart / 12;
   
-  const inflatedCost = profile?.targetCollege ? calculateInflatedTotalCost(profile.targetCollege, yearsFromTodayToStart, profile.collegeInflationRate || 4.5) : 0;
+  // Fix: Use the reactive costTodayAnnual baseline for the inflated calculation
+  const inflationRate = profile.collegeInflationRate || 4.5;
+  const inflation = inflationRate / 100;
+  let inflatedCost = 0;
+  if (profile?.targetCollege) {
+    // Sum 4 inflated years starting from the 'bridged' costTodayAnnual
+    for (let i = 0; i < 4; i++) {
+        inflatedCost += costTodayAnnual * Math.pow(1 + inflation, yearsFromTodayToStart + i);
+    }
+  }
 
   return (
     <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 border border-gray-100">
@@ -285,7 +294,7 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
                 <Info className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
                 <div className="space-y-2 w-full">
                   <p className="text-[11px] text-orange-800 leading-tight font-medium">
-                    With <strong>{profile.collegeInflationRate ?? 4.5}%</strong> inflation, her first year will cost <strong>{formatCurrency(costTodayAnnual * Math.pow(1 + (profile.collegeInflationRate ?? 4.5)/100, yearsFromTodayToStart))}</strong> (<strong>{((Math.pow(1 + (profile.collegeInflationRate ?? 4.5)/100, yearsFromTodayToStart) - 1) * 100).toFixed(1)}%</strong> more than today).
+                    With <strong>{inflationRate}%</strong> inflation, her first year will cost <strong>{formatCurrency(costTodayAnnual * Math.pow(1 + inflation, yearsFromTodayToStart))}</strong> (<strong>{((Math.pow(1 + inflation, yearsFromTodayToStart) - 1) * 100).toFixed(1)}%</strong> more than today).
                   </p>
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-orange-400 uppercase">Adjust Inflation Rate</label>
