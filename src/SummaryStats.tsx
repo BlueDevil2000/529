@@ -8,8 +8,9 @@ interface SummaryStatsProps {
 }
 
 const SummaryStats: React.FC<SummaryStatsProps> = ({ result, targetCost }) => {
-  // Use finalBalance for progress so it reflects Return Rate and Contribution changes
-  const progress = targetCost > 0 ? (result.finalBalance / targetCost) * 100 : 0;
+  // Progress = (Total saved) / (Total needed)
+  const totalSaved = result.totalContributions + result.totalEarnings;
+  const progress = targetCost > 0 ? (totalSaved / targetCost) * 100 : 0;
   
   return (
     <div className="space-y-6 mb-6">
