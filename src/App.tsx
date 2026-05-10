@@ -45,6 +45,7 @@ function App() {
             id: '1',
             name: 'Kid 1',
             initialBalance: 5000,
+            initialBalanceDate: format(new Date(), 'yyyy-MM'),
             monthlyContribution: 250,
             expectedReturnRate: 7.0,
             collegeStartDate: '2035-09',

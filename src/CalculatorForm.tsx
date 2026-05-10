@@ -293,7 +293,10 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
                       type="number"
                       name="collegeInflationRate"
                       value={profile.collegeInflationRate ?? 4.5}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        // Also trigger a re-calculation of the bridged price if we want it to be super responsive
+                      }}
                       className="w-full p-1.5 text-xs bg-white border border-orange-200 rounded focus:ring-1 focus:ring-orange-500 outline-none"
                       step="0.1"
                     />
