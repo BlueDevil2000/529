@@ -34,7 +34,7 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
     setError(null);
     try {
       const response = await fetch(
-        `${BASE_URL}?api_key=${API_KEY}&school.name=${encodeURIComponent(query)}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year,latest.type&per_page=20`
+        `${BASE_URL}?api_key=${API_KEY}&school.name=${encodeURIComponent(query)}&fields=id,school.name,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.cost.roomboard.oncampus,latest.cost.attendance.academic_year,latest.type,latest.admissions.admission_rate.overall,latest.admissions.sat_scores.average.overall,latest.admissions.act_scores.midpoint.cumulative,latest.student.size&per_page=20`
       );
       
       if (response.status === 429) {
@@ -71,6 +71,10 @@ const CollegeSearch: React.FC<CollegeSearchProps> = ({ onSelect }) => {
       roomAndBoard: rb || 0,
       costOfAttendance: coa || (tuition && rb ? (tuition + rb) : (tuition || coa || 0)),
       dataYear: apiDataYear,
+      admitRate: school['latest.admissions.admission_rate.overall'],
+      satAvg: school['latest.admissions.sat_scores.average.overall'],
+      actMid: school['latest.admissions.act_scores.midpoint.cumulative'],
+      studentSize: school['latest.student.size'],
     });
     setQuery('');
     setShowDropdown(false);

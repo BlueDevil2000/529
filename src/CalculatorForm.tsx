@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChildProfile, CollegeData } from './types';
 import CollegeSearch from './CollegeSearch';
-import { School, X, TrendingUp, Info, Calendar } from 'lucide-react';
+import { School, X, TrendingUp, Info, Calendar, Users, Target, BarChart } from 'lucide-react';
 import { formatCurrency } from './utils';
 import { differenceInMonths, parseISO, format } from 'date-fns';
 
@@ -244,6 +244,33 @@ const CalculatorForm: React.FC<CalculatorFormProps> = ({ profile, onChange }) =>
                 <span className="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded uppercase tracking-wider">
                   Verified Data Source
                 </span>
+                
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {profile.targetCollege.admitRate !== undefined && (
+                    <div className="flex items-center text-[10px] font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                      <Target className="h-3 w-3 mr-1 text-emerald-500" />
+                      Admit: {(profile.targetCollege.admitRate * 100).toFixed(1)}%
+                    </div>
+                  )}
+                  {profile.targetCollege.studentSize !== undefined && (
+                    <div className="flex items-center text-[10px] font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                      <Users className="h-3 w-3 mr-1 text-blue-500" />
+                      Size: {profile.targetCollege.studentSize.toLocaleString()}
+                    </div>
+                  )}
+                  {profile.targetCollege.satAvg !== undefined && (
+                    <div className="flex items-center text-[10px] font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                      <BarChart className="h-3 w-3 mr-1 text-indigo-500" />
+                      SAT: {Math.round(profile.targetCollege.satAvg)}
+                    </div>
+                  )}
+                  {profile.targetCollege.actMid !== undefined && (
+                    <div className="flex items-center text-[10px] font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                      <BarChart className="h-3 w-3 mr-1 text-purple-500" />
+                      ACT: {Math.round(profile.targetCollege.actMid)}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-4">

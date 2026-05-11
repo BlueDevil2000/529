@@ -6,6 +6,10 @@ export interface CollegeData {
   roomAndBoard: number;
   costOfAttendance?: number;
   dataYear?: number; // The year the data was reported
+  admitRate?: number;
+  satAvg?: number;
+  actMid?: number;
+  studentSize?: number;
 }
 
 export interface ChildProfile {
